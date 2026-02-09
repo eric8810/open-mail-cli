@@ -304,6 +304,7 @@ var init_logger = __esm({
       logFile;
       levels;
       currentLevel;
+      enableConsole;
       /**
        * Create a logger instance.
        */
@@ -317,6 +318,7 @@ var init_logger = __esm({
           DEBUG: 3
         };
         this.currentLevel = this.levels.INFO;
+        this.enableConsole = false;
         this.ensureLogDir();
       }
       /**
@@ -353,7 +355,9 @@ var init_logger = __esm({
       log(level, message, meta = {}) {
         if (this.levels[level] <= this.currentLevel) {
           const formattedMessage = this.formatMessage(level, message, meta);
-          console.log(formattedMessage);
+          if (this.enableConsole) {
+            console.log(formattedMessage);
+          }
           this.writeToFile(formattedMessage);
         }
       }
@@ -14336,7 +14340,7 @@ var import_commander2 = require("commander");
 // package.json
 var package_default = {
   name: "open-mail-cli",
-  version: "1.0.1",
+  version: "1.0.2",
   description: "A command-line email client with IMAP/SMTP support",
   main: "dist/index.js",
   bin: {

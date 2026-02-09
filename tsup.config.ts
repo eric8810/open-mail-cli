@@ -7,6 +7,9 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   target: 'node18',
+  define: {
+    'process.env.DEBUG': 'undefined'
+  },
   external: [
     'better-sqlite3',
     'node-imap',

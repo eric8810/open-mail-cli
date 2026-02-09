@@ -14,6 +14,7 @@ export class Logger {
   private logFile: string;
   private levels: Record<LogLevel, number>;
   private currentLevel: number;
+  private enableConsole: boolean;
 
   /**
    * Create a logger instance.
@@ -28,6 +29,7 @@ export class Logger {
       DEBUG: 3,
     };
     this.currentLevel = this.levels.INFO;
+    this.enableConsole = process.env.DEBUG !== undefined;
     this.ensureLogDir();
   }
 
@@ -77,7 +79,9 @@ export class Logger {
   ): void {
     if (this.levels[level] <= this.currentLevel) {
       const formattedMessage = this.formatMessage(level, message, meta);
-      console.log(formattedMessage);
+      if (this.enableConsole) {
+        console.log(formattedMessage);
+      }
       this.writeToFile(formattedMessage);
     }
   }
