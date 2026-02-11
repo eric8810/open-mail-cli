@@ -1,6 +1,7 @@
 import { MarkdownFormatter } from './markdown';
 import { JSONFormatter } from './json';
 import { IDsOnlyFormatter } from './ids-only';
+import { HTMLFormatter } from './html';
 import type {
   Formatter,
   FormatOptions,
@@ -9,7 +10,7 @@ import type {
 } from './types';
 import type { EmailData } from './email-data';
 
-export { MarkdownFormatter, JSONFormatter, IDsOnlyFormatter };
+export { MarkdownFormatter, JSONFormatter, IDsOnlyFormatter, HTMLFormatter };
 export type { Formatter, FormatOptions, OutputFormat, FormatMeta, EmailData };
 
 export function getFormatter(format: OutputFormat = 'markdown'): Formatter {
@@ -18,6 +19,8 @@ export function getFormatter(format: OutputFormat = 'markdown'): Formatter {
       return new JSONFormatter();
     case 'ids-only':
       return new IDsOnlyFormatter();
+    case 'html':
+      return new HTMLFormatter();
     case 'markdown':
     default:
       return new MarkdownFormatter();

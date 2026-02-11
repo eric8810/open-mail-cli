@@ -39,8 +39,9 @@ import {
   moveThread,
 } from './commands/thread';
 import { trashCommand } from './commands/trash';
+import webhookCommand from './commands/webhook';
 
-const VALID_FORMATS = ['markdown', 'json', 'ids-only'];
+const VALID_FORMATS = ['markdown', 'json', 'ids-only', 'html'];
 
 function validateFormat(value: string): string {
   if (!VALID_FORMATS.includes(value)) {
@@ -121,7 +122,7 @@ function createCLI(): Command {
     .option('--thread', 'Display emails in thread view')
     .option(
       '--format <format>',
-      'Output format (markdown, json, ids-only)',
+      'Output format (markdown, json, html, ids-only)',
       validateFormat,
       'markdown'
     )
@@ -139,7 +140,7 @@ function createCLI(): Command {
     .option('--raw', 'Show raw email content')
     .option(
       '--format <format>',
-      'Output format (markdown, json, ids-only)',
+      'Output format (markdown, json, html, ids-only)',
       validateFormat,
       'markdown'
     )
@@ -169,7 +170,7 @@ function createCLI(): Command {
     .option('--date <date>', 'Search from date (YYYY-MM-DD)')
     .option(
       '--format <format>',
-      'Output format (markdown, json, ids-only)',
+      'Output format (markdown, json, html, ids-only)',
       validateFormat,
       'markdown'
     )
@@ -438,6 +439,14 @@ function createCLI(): Command {
     .option('-h, --host <host>', 'Host address (default: 127.0.0.1)')
     .option('--allow-remote', 'Allow remote connections (bind to 0.0.0.0)')
     .action(serveCommand);
+
+  // Webhook command
+  program
+    .command('webhook <action> [args...]')
+    .description('Manage webhooks (add|list|remove|test)')
+    .option('--events <types>', 'Event types to listen for (comma-separated)')
+    .option('--secret <secret>', 'HMAC signing secret')
+    .action(webhookCommand);
 
   return program;
 }

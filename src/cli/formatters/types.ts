@@ -1,4 +1,4 @@
-export type OutputFormat = 'markdown' | 'json' | 'ids-only';
+export type OutputFormat = 'markdown' | 'json' | 'ids-only' | 'html';
 
 export interface FormatOptions {
   format?: OutputFormat;
