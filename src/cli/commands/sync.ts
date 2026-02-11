@@ -2,6 +2,7 @@ import chalk from 'chalk';
 import ora from 'ora';
 
 import config from '../../config';
+import { eventBus, EventTypes } from '../../events';
 import IMAPSync from '../../imap/sync';
 import accountManager from '../../sync/account-manager';
 import SyncDaemon from '../../sync/daemon';
@@ -70,6 +71,17 @@ async function handleRegularSync(action, options) {
 
     const results = await syncManager.syncFolders(folders);
 
+    eventBus.emit({
+      type: EventTypes.SYNC_COMPLETED,
+      timestamp: new Date(),
+      data: {
+        folders,
+        totalNew: results.totalNew,
+        totalErrors: results.totalErrors,
+      },
+      accountId: account ?? undefined,
+    });
+
     spinner.succeed('Sync completed');
     console.log();
     console.log(formatSyncResults(results));
@@ -77,6 +89,11 @@ async function handleRegularSync(action, options) {
     // Display sync statistics
     displaySyncStats(results);
   } catch (error) {
+    eventBus.emit({
+      type: EventTypes.SYNC_ERROR,
+      timestamp: new Date(),
+      data: { error: error.message },
+    });
     spinner.fail('Sync failed');
     console.error(chalk.red('Error:'), error.message);
     logger.error('Sync command failed', { error: error.message });

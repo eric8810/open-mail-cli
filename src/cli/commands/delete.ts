@@ -1,9 +1,12 @@
 import chalk from 'chalk';
 
 import config from '../../config';
+import { eventBus, EventTypes } from '../../events';
 import IMAPClient from '../../imap/client';
 import emailModel from '../../storage/models/email';
+import { ValidationError } from '../../utils/errors';
 import logger from '../../utils/logger';
+import { handleCommandError } from '../utils/error-handler';
 
 /**
  * Delete email command
@@ -15,8 +18,7 @@ async function deleteCommand(emailId, options) {
 
     const email = emailModel.findById(emailId);
     if (!email) {
-      console.error(chalk.red(`Error: Email with ID ${emailId} not found`));
-      process.exit(1);
+      throw new ValidationError(`Email with ID ${emailId} not found`);
     }
 
     if (email.isDeleted && !permanent) {
@@ -65,6 +67,11 @@ async function deleteCommand(emailId, options) {
       emailModel.permanentlyDelete(emailId);
       console.log(chalk.green(`Email ${emailId} permanently deleted`));
       logger.info('Email permanently deleted', { emailId });
+      eventBus.emit({
+        type: EventTypes.EMAIL_DELETED,
+        timestamp: new Date(),
+        data: { emailId, permanent: true, subject: email.subject },
+      });
     } else {
       const cfg = config.load();
       if (cfg.imap.host && cfg.imap.user && cfg.imap.password) {
@@ -92,11 +99,14 @@ async function deleteCommand(emailId, options) {
       emailModel.markAsDeleted(emailId);
       console.log(chalk.green(`Email ${emailId} moved to trash`));
       logger.info('Email moved to trash', { emailId });
+      eventBus.emit({
+        type: EventTypes.EMAIL_DELETED,
+        timestamp: new Date(),
+        data: { emailId, permanent: false, subject: email.subject },
+      });
     }
   } catch (error) {
-    console.error(chalk.red(`Error deleting email: ${error.message}`));
-    logger.error('Delete command failed', { error: error.message });
-    process.exit(1);
+    handleCommandError(error);
   }
 }
 
@@ -112,8 +122,7 @@ async function batchDeleteCommand(emailIds, options) {
       .filter((id) => !isNaN(id));
 
     if (ids.length === 0) {
-      console.error(chalk.red('Error: No valid email IDs provided'));
-      process.exit(1);
+      throw new ValidationError('No valid email IDs provided');
     }
 
     if (permanent) {
@@ -167,9 +176,7 @@ async function batchDeleteCommand(emailIds, options) {
       permanent,
     });
   } catch (error) {
-    console.error(chalk.red(`Error in batch delete: ${error.message}`));
-    logger.error('Batch delete command failed', { error: error.message });
-    process.exit(1);
+    handleCommandError(error);
   }
 }
 

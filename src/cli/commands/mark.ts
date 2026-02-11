@@ -1,5 +1,6 @@
 import chalk from 'chalk';
 
+import { eventBus, EventTypes } from '../../events';
 import emailModel from '../../storage/models/email';
 import logger from '../../utils/logger';
 
@@ -18,6 +19,12 @@ function starCommand(emailId, options) {
     }
 
     emailModel.markAsStarred(id);
+
+    eventBus.emit({
+      type: EventTypes.EMAIL_STARRED,
+      timestamp: new Date(),
+      data: { emailId: id, starred: true, subject: email.subject },
+    });
 
     console.log(chalk.green('✓'), `Email #${id} marked as starred`);
     console.log(chalk.gray(`  Subject: ${email.subject}`));
@@ -44,6 +51,12 @@ function unstarCommand(emailId, options) {
 
     emailModel.unmarkAsStarred(id);
 
+    eventBus.emit({
+      type: EventTypes.EMAIL_STARRED,
+      timestamp: new Date(),
+      data: { emailId: id, starred: false, subject: email.subject },
+    });
+
     console.log(chalk.green('✓'), `Email #${id} unmarked as starred`);
     console.log(chalk.gray(`  Subject: ${email.subject}`));
   } catch (error) {
@@ -69,6 +82,12 @@ function flagCommand(emailId, options) {
 
     emailModel.markAsImportant(id);
 
+    eventBus.emit({
+      type: EventTypes.EMAIL_FLAGGED,
+      timestamp: new Date(),
+      data: { emailId: id, flagged: true, subject: email.subject },
+    });
+
     console.log(chalk.green('✓'), `Email #${id} marked as important (flagged)`);
     console.log(chalk.gray(`  Subject: ${email.subject}`));
   } catch (error) {
@@ -93,6 +112,12 @@ function unflagCommand(emailId, options) {
     }
 
     emailModel.unmarkAsImportant(id);
+
+    eventBus.emit({
+      type: EventTypes.EMAIL_FLAGGED,
+      timestamp: new Date(),
+      data: { emailId: id, flagged: false, subject: email.subject },
+    });
 
     console.log(
       chalk.green('✓'),

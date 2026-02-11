@@ -4,10 +4,13 @@ import ora from 'ora';
 
 import config from '../../config';
 import contactManager from '../../contacts/manager';
+import { eventBus, EventTypes } from '../../events';
 import signatureManager from '../../signatures/manager';
 import SMTPClient from '../../smtp/client';
 import EmailComposer from '../../smtp/composer';
+import { ConfigError } from '../../utils/errors';
 import logger from '../../utils/logger';
+import { handleCommandError } from '../utils/error-handler';
 
 /**
  * Send command - Send email via SMTP
@@ -17,10 +20,9 @@ async function sendCommand(options) {
     // Load configuration
     const cfg = config.load();
     if (!cfg.smtp.host || !cfg.smtp.user || !cfg.smtp.password) {
-      console.error(
-        chalk.red('SMTP configuration incomplete. Please run: mail-cli config')
+      throw new ConfigError(
+        'SMTP configuration incomplete. Please run: mail-cli config'
       );
-      process.exit(1);
     }
 
     let emailData;
@@ -65,6 +67,16 @@ async function sendCommand(options) {
     spinner.succeed('Email sent successfully!');
     console.log(chalk.gray(`Message ID: ${result.messageId}`));
 
+    eventBus.emit({
+      type: EventTypes.EMAIL_SENT,
+      timestamp: new Date(),
+      data: {
+        messageId: result.messageId,
+        to: emailData.to,
+        subject: emailData.subject,
+      },
+    });
+
     // Auto-collect contacts from recipients
     try {
       const recipients = [
@@ -82,9 +94,7 @@ async function sendCommand(options) {
 
     smtpClient.disconnect();
   } catch (error) {
-    console.error(chalk.red('Error:'), error.message);
-    logger.error('Send command failed', { error: error.message });
-    process.exit(1);
+    handleCommandError(error);
   }
 }
 
