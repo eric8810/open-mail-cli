@@ -5,7 +5,9 @@ import chalk from 'chalk';
 import config from '../../config';
 import { eventBus, webhookManager, EventTypes } from '../../events';
 import type { WebhookConfig, MailEvent } from '../../events';
+import { ValidationError } from '../../utils/errors';
 import logger from '../../utils/logger';
+import { handleCommandError } from '../utils/error-handler';
 
 /**
  * Webhook command - Manage webhook integrations
@@ -34,10 +36,7 @@ async function webhookCommand(
         process.exit(1);
     }
   } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    console.error(chalk.red('Error:'), msg);
-    logger.error('Webhook command failed', { action, error: msg });
-    process.exit(1);
+    handleCommandError(error);
   }
 }
 
@@ -54,8 +53,7 @@ function saveWebhooks(webhooks: WebhookConfig[]): void {
 
 function addWebhook(url: string, options: Record<string, unknown>): void {
   if (!url) {
-    console.error(chalk.red('Error: URL is required'));
-    process.exit(1);
+    throw new ValidationError('URL is required');
   }
 
   const eventsStr = (options.events as string) ?? '';
@@ -65,12 +63,9 @@ function addWebhook(url: string, options: Record<string, unknown>): void {
     .filter(Boolean);
 
   if (events.length === 0) {
-    console.error(
-      chalk.red(
-        'Error: At least one event type is required (--events "email:received,email:sent")'
-      )
+    throw new ValidationError(
+      'At least one event type is required (--events "email:received,email:sent")'
     );
-    process.exit(1);
   }
 
   const webhook: WebhookConfig = {
@@ -114,16 +109,14 @@ function listWebhooks(): void {
 
 function removeWebhook(id: string): void {
   if (!id) {
-    console.error(chalk.red('Error: Webhook ID is required'));
-    process.exit(1);
+    throw new ValidationError('Webhook ID is required');
   }
 
   const webhooks = loadWebhooks();
   const idx = webhooks.findIndex((w) => w.id === id);
 
   if (idx === -1) {
-    console.error(chalk.red(`Error: Webhook ${id} not found`));
-    process.exit(1);
+    throw new ValidationError(`Webhook ${id} not found`);
   }
 
   webhooks.splice(idx, 1);
@@ -133,16 +126,14 @@ function removeWebhook(id: string): void {
 
 async function testWebhook(id: string): Promise<void> {
   if (!id) {
-    console.error(chalk.red('Error: Webhook ID is required'));
-    process.exit(1);
+    throw new ValidationError('Webhook ID is required');
   }
 
   const webhooks = loadWebhooks();
   const webhook = webhooks.find((w) => w.id === id);
 
   if (!webhook) {
-    console.error(chalk.red(`Error: Webhook ${id} not found`));
-    process.exit(1);
+    throw new ValidationError(`Webhook ${id} not found`);
   }
 
   console.log(chalk.blue(`Testing webhook ${id}...`));

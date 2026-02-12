@@ -5,7 +5,7 @@ import ora from 'ora';
 
 import accountManager from '../../accounts/manager';
 import importExportManager from '../../import-export/manager';
-import logger from '../../utils/logger';
+import { handleCommandError } from '../utils/error-handler';
 
 /**
  * Import/Export commands
@@ -32,9 +32,7 @@ importExportCommand
       spinner.succeed(`Email exported to ${filePath}`);
     } catch (error) {
       spinner.fail('Export failed');
-      logger.error('Failed to export email', { error: error.message });
-      console.error(`Error: ${error.message}`);
-      process.exit(1);
+      handleCommandError(error);
     }
   });
 
@@ -68,9 +66,7 @@ importExportCommand
       );
     } catch (error) {
       spinner.fail('Export failed');
-      logger.error('Failed to export folder', { error: error.message });
-      console.error(`Error: ${error.message}`);
-      process.exit(1);
+      handleCommandError(error);
     }
   });
 
@@ -101,9 +97,7 @@ importExportCommand
       spinner.succeed(`Exported ${count} emails to ${filePath}`);
     } catch (error) {
       spinner.fail('Export failed');
-      logger.error('Failed to export all emails', { error: error.message });
-      console.error(`Error: ${error.message}`);
-      process.exit(1);
+      handleCommandError(error);
     }
   });
 
@@ -155,9 +149,7 @@ importCommand
       }
     } catch (error) {
       spinner.fail('Import failed');
-      logger.error('Failed to import EML file', { error: error.message });
-      console.error(`Error: ${error.message}`);
-      process.exit(1);
+      handleCommandError(error);
     }
   });
 
@@ -199,9 +191,7 @@ importCommand
       );
     } catch (error) {
       spinner.fail('Import failed');
-      logger.error('Failed to import MBOX file', { error: error.message });
-      console.error(`Error: ${error.message}`);
-      process.exit(1);
+      handleCommandError(error);
     }
   });
 

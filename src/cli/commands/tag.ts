@@ -3,6 +3,7 @@ import chalk from 'chalk';
 import emailModel from '../../storage/models/email';
 import tagModel from '../../storage/models/tag';
 import logger from '../../utils/logger';
+import { handleCommandError } from '../utils/error-handler';
 import { formatEmailList } from '../utils/formatter';
 
 /**
@@ -33,9 +34,7 @@ function tagCommand(action, args, options) {
         process.exit(1);
     }
   } catch (error) {
-    console.error(chalk.red('Error:'), error.message);
-    logger.error('Tag command failed', { action, error: error.message });
-    process.exit(1);
+    handleCommandError(error);
   }
 }
 

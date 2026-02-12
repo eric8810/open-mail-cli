@@ -2,6 +2,7 @@ import chalk from 'chalk';
 
 import templateManager from '../../templates/manager';
 import logger from '../../utils/logger';
+import { handleCommandError } from '../utils/error-handler';
 
 /**
  * Template command handler
@@ -33,9 +34,7 @@ async function templateCommand(action, options = {}) {
         process.exit(1);
     }
   } catch (error) {
-    logger.error('Template command failed', { action, error: error.message });
-    console.error(chalk.red(`Error: ${error.message}`));
-    process.exit(1);
+    handleCommandError(error);
   }
 }
 

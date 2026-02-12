@@ -5,6 +5,7 @@ import threadModel from '../../storage/models/thread';
 import analyzer from '../../threads/analyzer';
 import builder from '../../threads/builder';
 import logger from '../../utils/logger';
+import { handleCommandError } from '../utils/error-handler';
 
 /**
  * Format thread tree for display
@@ -100,9 +101,7 @@ async function listThreads(options = {}) {
       )
     );
   } catch (error) {
-    logger.error('Failed to list threads', { error: error.message });
-    console.error(chalk.red(`Error: ${error.message}`));
-    process.exit(1);
+    handleCommandError(error);
   }
 }
 
@@ -161,9 +160,7 @@ async function showThread(emailId, options = {}) {
     console.log(chalk.gray(`  Max depth: ${stats.depth}`));
     console.log(chalk.gray(`  Unread: ${stats.hasUnread ? 'Yes' : 'No'}`));
   } catch (error) {
-    logger.error('Failed to show thread', { error: error.message });
-    console.error(chalk.red(`Error: ${error.message}`));
-    process.exit(1);
+    handleCommandError(error);
   }
 }
 
@@ -221,9 +218,7 @@ async function deleteThread(emailId, options = {}) {
       chalk.green(`✓ Thread deleted (${threadEmails.length} messages)`)
     );
   } catch (error) {
-    logger.error('Failed to delete thread', { error: error.message });
-    console.error(chalk.red(`Error: ${error.message}`));
-    process.exit(1);
+    handleCommandError(error);
   }
 }
 
@@ -279,9 +274,7 @@ async function moveThread(emailId, targetFolder, options = {}) {
       )
     );
   } catch (error) {
-    logger.error('Failed to move thread', { error: error.message });
-    console.error(chalk.red(`Error: ${error.message}`));
-    process.exit(1);
+    handleCommandError(error);
   }
 }
 

@@ -1,8 +1,9 @@
 import spamFilter from '../../spam/filter';
 import emailModel from '../../storage/models/email';
 import spamModel from '../../storage/models/spam';
-import logger from '../../utils/logger';
+import { ValidationError } from '../../utils/errors';
 import { formatTable } from '../utils/formatter';
+import { handleCommandError } from '../utils/error-handler';
 
 /**
  * Spam management commands
@@ -15,8 +16,7 @@ async function markAsSpam(emailId) {
   try {
     const email = await emailModel.findById(emailId);
     if (!email) {
-      console.error(`Error: Email with ID ${emailId} not found`);
-      return;
+      throw new ValidationError(`Email with ID ${emailId} not found`);
     }
 
     await emailModel.markAsSpam(emailId);
@@ -26,8 +26,7 @@ async function markAsSpam(emailId) {
     await spamFilter.learnFromFeedback(emailId, true);
     console.log('Spam filter updated based on your feedback');
   } catch (error) {
-    console.error('Failed to mark email as spam:', error.message);
-    logger.error('Mark as spam failed', { emailId, error: error.message });
+    handleCommandError(error);
   }
 }
 
@@ -38,8 +37,7 @@ async function unmarkAsSpam(emailId) {
   try {
     const email = await emailModel.findById(emailId);
     if (!email) {
-      console.error(`Error: Email with ID ${emailId} not found`);
-      return;
+      throw new ValidationError(`Email with ID ${emailId} not found`);
     }
 
     await emailModel.unmarkAsSpam(emailId);
@@ -49,8 +47,7 @@ async function unmarkAsSpam(emailId) {
     await spamFilter.learnFromFeedback(emailId, false);
     console.log('Spam filter updated based on your feedback');
   } catch (error) {
-    console.error('Failed to unmark email as spam:', error.message);
-    logger.error('Unmark as spam failed', { emailId, error: error.message });
+    handleCommandError(error);
   }
 }
 
@@ -79,8 +76,7 @@ async function listSpam(options = {}) {
 
     console.log(formatTable(tableData));
   } catch (error) {
-    console.error('Failed to list spam emails:', error.message);
-    logger.error('List spam failed', { error: error.message });
+    handleCommandError(error);
   }
 }
 
@@ -96,11 +92,7 @@ async function addToBlacklist(emailAddress, reason) {
       console.log(`Reason: ${reason}`);
     }
   } catch (error) {
-    console.error('Failed to add to blacklist:', error.message);
-    logger.error('Add to blacklist failed', {
-      emailAddress,
-      error: error.message,
-    });
+    handleCommandError(error);
   }
 }
 
@@ -117,11 +109,7 @@ async function removeFromBlacklist(emailAddress) {
       console.log(`${emailAddress} was not in blacklist`);
     }
   } catch (error) {
-    console.error('Failed to remove from blacklist:', error.message);
-    logger.error('Remove from blacklist failed', {
-      emailAddress,
-      error: error.message,
-    });
+    handleCommandError(error);
   }
 }
 
@@ -149,8 +137,7 @@ async function listBlacklist() {
 
     console.log(formatTable(tableData));
   } catch (error) {
-    console.error('Failed to list blacklist:', error.message);
-    logger.error('List blacklist failed', { error: error.message });
+    handleCommandError(error);
   }
 }
 
@@ -162,11 +149,7 @@ async function addToWhitelist(emailAddress) {
     await spamModel.addToWhitelist(emailAddress);
     console.log(`Added ${emailAddress} to whitelist`);
   } catch (error) {
-    console.error('Failed to add to whitelist:', error.message);
-    logger.error('Add to whitelist failed', {
-      emailAddress,
-      error: error.message,
-    });
+    handleCommandError(error);
   }
 }
 
@@ -183,11 +166,7 @@ async function removeFromWhitelist(emailAddress) {
       console.log(`${emailAddress} was not in whitelist`);
     }
   } catch (error) {
-    console.error('Failed to remove from whitelist:', error.message);
-    logger.error('Remove from whitelist failed', {
-      emailAddress,
-      error: error.message,
-    });
+    handleCommandError(error);
   }
 }
 
@@ -214,8 +193,7 @@ async function listWhitelist() {
 
     console.log(formatTable(tableData));
   } catch (error) {
-    console.error('Failed to list whitelist:', error.message);
-    logger.error('List whitelist failed', { error: error.message });
+    handleCommandError(error);
   }
 }
 
@@ -256,8 +234,7 @@ async function runFilter(options = {}) {
 
     console.log(`\nScan complete: ${spamCount} spam emails detected`);
   } catch (error) {
-    console.error('Failed to run spam filter:', error.message);
-    logger.error('Run filter failed', { error: error.message });
+    handleCommandError(error);
   }
 }
 
@@ -276,8 +253,7 @@ async function showStatistics() {
     console.log(`  Active rules: ${stats.rulesCount}`);
     console.log(`  Detection threshold: ${stats.threshold}`);
   } catch (error) {
-    console.error('Failed to get statistics:', error.message);
-    logger.error('Get statistics failed', { error: error.message });
+    handleCommandError(error);
   }
 }
 
@@ -289,16 +265,14 @@ async function spamCommand(action, ...args) {
     switch (action) {
       case 'mark':
         if (!args[0]) {
-          console.error('Usage: mail-cli spam mark <email-id>');
-          return;
+          throw new ValidationError('Usage: mail-cli spam mark <email-id>');
         }
         await markAsSpam(parseInt(args[0]));
         break;
 
       case 'unmark':
         if (!args[0]) {
-          console.error('Usage: mail-cli spam unmark <email-id>');
-          return;
+          throw new ValidationError('Usage: mail-cli spam unmark <email-id>');
         }
         await unmarkAsSpam(parseInt(args[0]));
         break;
@@ -311,22 +285,22 @@ async function spamCommand(action, ...args) {
         const blacklistAction = args[0];
         if (blacklistAction === 'add') {
           if (!args[1]) {
-            console.error(
+            throw new ValidationError(
               'Usage: mail-cli spam blacklist add <email> [reason]'
             );
-            return;
           }
           await addToBlacklist(args[1], args.slice(2).join(' '));
         } else if (blacklistAction === 'remove') {
           if (!args[1]) {
-            console.error('Usage: mail-cli spam blacklist remove <email>');
-            return;
+            throw new ValidationError(
+              'Usage: mail-cli spam blacklist remove <email>'
+            );
           }
           await removeFromBlacklist(args[1]);
         } else if (blacklistAction === 'list') {
           await listBlacklist();
         } else {
-          console.error(
+          throw new ValidationError(
             'Usage: mail-cli spam blacklist <add|remove|list> [email]'
           );
         }
@@ -336,20 +310,22 @@ async function spamCommand(action, ...args) {
         const whitelistAction = args[0];
         if (whitelistAction === 'add') {
           if (!args[1]) {
-            console.error('Usage: mail-cli spam whitelist add <email>');
-            return;
+            throw new ValidationError(
+              'Usage: mail-cli spam whitelist add <email>'
+            );
           }
           await addToWhitelist(args[1]);
         } else if (whitelistAction === 'remove') {
           if (!args[1]) {
-            console.error('Usage: mail-cli spam whitelist remove <email>');
-            return;
+            throw new ValidationError(
+              'Usage: mail-cli spam whitelist remove <email>'
+            );
           }
           await removeFromWhitelist(args[1]);
         } else if (whitelistAction === 'list') {
           await listWhitelist();
         } else {
-          console.error(
+          throw new ValidationError(
             'Usage: mail-cli spam whitelist <add|remove|list> [email]'
           );
         }
@@ -400,8 +376,7 @@ async function spamCommand(action, ...args) {
         );
     }
   } catch (error) {
-    console.error('Spam command failed:', error.message);
-    logger.error('Spam command failed', { action, error: error.message });
+    handleCommandError(error);
   }
 }
 

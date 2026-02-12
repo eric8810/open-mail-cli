@@ -6,7 +6,9 @@ import emailModel from '../../storage/models/email';
 import tagModel from '../../storage/models/tag';
 import analyzer from '../../threads/analyzer';
 import builder from '../../threads/builder';
+import { ValidationError } from '../../utils/errors';
 import logger from '../../utils/logger';
+import { handleCommandError } from '../utils/error-handler';
 import { formatEmailList } from '../utils/formatter';
 import { getFormatter, type FormatOptions } from '../formatters';
 import { parsePagination, calculateRange } from '../utils/pagination';
@@ -63,8 +65,7 @@ function listCommand(options) {
       // Find tag by name
       const tagObj = tagModel.findByName(tag);
       if (!tagObj) {
-        console.error(chalk.red('Error:'), `Tag "${tag}" not found`);
-        process.exit(1);
+        throw new ValidationError(`Tag "${tag}" not found`);
       }
       title = `Emails tagged with "${tag}"`;
       const rawEmails = tagModel.findEmailsByTag(tagObj.id, {
@@ -198,9 +199,7 @@ function listCommand(options) {
       }
     }
   } catch (error) {
-    console.error(chalk.red('Error:'), error.message);
-    logger.error('List command failed', { error: error.message });
-    process.exit(1);
+    handleCommandError(error, options.format);
   }
 }
 

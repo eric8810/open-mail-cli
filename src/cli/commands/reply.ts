@@ -6,7 +6,9 @@ import config from '../../config';
 import SMTPClient from '../../smtp/client';
 import EmailComposer from '../../smtp/composer';
 import emailModel from '../../storage/models/email';
+import { ConfigError, ValidationError } from '../../utils/errors';
 import logger from '../../utils/logger';
+import { handleCommandError } from '../utils/error-handler';
 
 /**
  * Reply command - Reply to an email
@@ -16,17 +18,15 @@ async function replyCommand(emailId, options) {
     // Load configuration
     const cfg = config.load();
     if (!cfg.smtp.host || !cfg.smtp.user || !cfg.smtp.password) {
-      console.error(
-        chalk.red('SMTP configuration incomplete. Please run: mail-cli config')
+      throw new ConfigError(
+        'SMTP configuration incomplete. Please run: mail-cli config'
       );
-      process.exit(1);
     }
 
     // Get original email
     const originalEmail = emailModel.findById(emailId);
     if (!originalEmail) {
-      console.error(chalk.red(`Email with ID ${emailId} not found`));
-      process.exit(1);
+      throw new ValidationError(`Email with ID ${emailId} not found`);
     }
 
     // Display original email info
@@ -47,8 +47,7 @@ async function replyCommand(emailId, options) {
         cfg.smtp.user
       );
       if (allRecipients.length === 0) {
-        console.error(chalk.red('No recipients found for reply-all'));
-        process.exit(1);
+        throw new ValidationError('No recipients found for reply-all');
       }
       composer.setTo(allRecipients);
       console.log(chalk.gray(`Reply to all: ${allRecipients.join(', ')}`));
@@ -136,9 +135,7 @@ async function replyCommand(emailId, options) {
 
     smtpClient.disconnect();
   } catch (error) {
-    console.error(chalk.red('Error:'), error.message);
-    logger.error('Reply command failed', { error: error.message });
-    process.exit(1);
+    handleCommandError(error);
   }
 }
 

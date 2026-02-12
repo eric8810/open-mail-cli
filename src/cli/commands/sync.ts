@@ -8,6 +8,7 @@ import accountManager from '../../sync/account-manager';
 import SyncDaemon from '../../sync/daemon';
 import SyncScheduler from '../../sync/scheduler';
 import logger from '../../utils/logger';
+import { handleCommandError } from '../utils/error-handler';
 import { formatSyncResults } from '../utils/formatter';
 
 /**
@@ -95,9 +96,7 @@ async function handleRegularSync(action, options) {
       data: { error: error.message },
     });
     spinner.fail('Sync failed');
-    console.error(chalk.red('Error:'), error.message);
-    logger.error('Sync command failed', { error: error.message });
-    process.exit(1);
+    handleCommandError(error);
   }
 }
 
@@ -222,9 +221,7 @@ async function handleDaemonCommand(options) {
         process.exit(1);
     }
   } catch (error) {
-    console.error(chalk.red('Error:'), error.message);
-    logger.error('Daemon command failed', { subcommand, error: error.message });
-    process.exit(1);
+    handleCommandError(error);
   }
 }
 

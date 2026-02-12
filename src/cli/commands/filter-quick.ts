@@ -2,6 +2,7 @@ import chalk from 'chalk';
 
 import emailModel from '../../storage/models/email';
 import logger from '../../utils/logger';
+import { handleCommandError } from '../utils/error-handler';
 import { formatEmailList } from '../utils/formatter';
 
 /**
@@ -121,12 +122,7 @@ function quickFilterCommand(filter, options) {
     console.log();
     console.log(chalk.gray(`Showing ${emails.length} email(s) (Page ${page})`));
   } catch (error) {
-    console.error(chalk.red('Error:'), error.message);
-    logger.error('Quick filter command failed', {
-      filter,
-      error: error.message,
-    });
-    process.exit(1);
+    handleCommandError(error);
   }
 }
 

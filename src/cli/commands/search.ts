@@ -2,7 +2,9 @@ import chalk from 'chalk';
 
 import emailModel from '../../storage/models/email';
 import savedSearchModel from '../../storage/models/saved-search';
+import { ValidationError } from '../../utils/errors';
 import logger from '../../utils/logger';
+import { handleCommandError } from '../utils/error-handler';
 import { formatEmailList } from '../utils/formatter';
 import { getFormatter, type FormatOptions } from '../formatters';
 import { parsePagination, calculateRange } from '../utils/pagination';
@@ -56,7 +58,7 @@ function searchCommand(action, options) {
       console.log('  search load --name <name>    Load saved search');
       console.log('  search list-saved            List saved searches');
       console.log('  search delete-saved --name <name>  Delete saved search');
-      process.exit(1);
+      throw new ValidationError('Please provide search criteria');
     }
 
     // Display search criteria
@@ -122,9 +124,7 @@ function searchCommand(action, options) {
     // Store last search for potential saving
     global.lastSearchQuery = query;
   } catch (error) {
-    console.error(chalk.red('Error:'), error.message);
-    logger.error('Search command failed', { error: error.message });
-    process.exit(1);
+    handleCommandError(error, options.format);
   }
 }
 
@@ -192,32 +192,21 @@ function displaySearchCriteria(query) {
  */
 function saveSearch(options) {
   if (!options.name) {
-    console.error(chalk.red('Error: Search name is required'));
-    console.log('Usage: search save --name <name>');
-    process.exit(1);
+    throw new ValidationError('Search name is required');
   }
 
   if (!global.lastSearchQuery) {
-    console.error(chalk.red('Error: No search to save. Run a search first.'));
-    process.exit(1);
+    throw new ValidationError('No search to save. Run a search first.');
   }
 
-  try {
-    const searchId = savedSearchModel.create({
-      name: options.name,
-      query: global.lastSearchQuery,
-      description: options.description || '',
-    });
+  const searchId = savedSearchModel.create({
+    name: options.name,
+    query: global.lastSearchQuery,
+    description: options.description || '',
+  });
 
-    console.log(
-      chalk.green('✓'),
-      `Search "${options.name}" saved successfully`
-    );
-    console.log(chalk.gray(`  ID: ${searchId}`));
-  } catch (error) {
-    console.error(chalk.red('Error:'), error.message);
-    process.exit(1);
-  }
+  console.log(chalk.green('✓'), `Search "${options.name}" saved successfully`);
+  console.log(chalk.gray(`  ID: ${searchId}`));
 }
 
 /**
@@ -225,120 +214,102 @@ function saveSearch(options) {
  */
 function loadSearch(options) {
   if (!options.name) {
-    console.error(chalk.red('Error: Search name is required'));
-    console.log('Usage: search load --name <name>');
-    process.exit(1);
+    throw new ValidationError('Search name is required');
   }
 
-  try {
-    const savedSearch = savedSearchModel.findByName(options.name);
+  const savedSearch = savedSearchModel.findByName(options.name);
 
-    if (!savedSearch) {
-      console.error(
-        chalk.red('Error:'),
-        `Saved search "${options.name}" not found`
-      );
-      process.exit(1);
-    }
+  if (!savedSearch) {
+    throw new ValidationError(`Saved search "${options.name}" not found`);
+  }
 
-    console.log(chalk.bold.cyan(`Loading saved search: "${savedSearch.name}"`));
-    if (savedSearch.description) {
-      console.log(chalk.gray(`  ${savedSearch.description}`));
-    }
-    console.log();
+  console.log(chalk.bold.cyan(`Loading saved search: "${savedSearch.name}"`));
+  if (savedSearch.description) {
+    console.log(chalk.gray(`  ${savedSearch.description}`));
+  }
+  console.log();
 
-    const query = JSON.parse(savedSearch.query);
+  const query = JSON.parse(savedSearch.query);
 
-    console.log(chalk.bold.cyan('Search Criteria:'));
-    displaySearchCriteria(query);
-    console.log();
+  console.log(chalk.bold.cyan('Search Criteria:'));
+  displaySearchCriteria(query);
+  console.log();
 
-    console.log(chalk.bold.cyan('Search Results:'));
-    console.log();
+  console.log(chalk.bold.cyan('Search Results:'));
+  console.log();
 
-    const { limit, offset, page } = parsePagination(options);
-    query.limit = limit;
-    query.offset = offset;
+  const { limit, offset, page } = parsePagination(options);
+  query.limit = limit;
+  query.offset = offset;
 
-    const emails = emailModel.search(query);
+  const emails = emailModel.search(query);
 
-    if (emails.length === 0) {
-      const range = calculateRange(offset, limit, 0);
-      const format = options.idsOnly
-        ? 'ids-only'
-        : options.format || 'markdown';
-      const formatter = getFormatter(format);
-      const meta = {
-        total: 0,
-        unread: 0,
-        page,
-        limit,
-        offset,
-        totalPages: 0,
-        showing: range.showing,
-      };
-      console.log(formatter.formatList(emails, meta, options));
-      return;
-    }
-
+  if (emails.length === 0) {
+    const range = calculateRange(offset, limit, 0);
     const format = options.idsOnly ? 'ids-only' : options.format || 'markdown';
-
-    const range = calculateRange(offset, limit, emails.length);
     const formatter = getFormatter(format);
     const meta = {
-      total: emails.length,
-      unread: emails.filter((e) => !e.isRead).length,
+      total: 0,
+      unread: 0,
       page,
       limit,
       offset,
-      totalPages: page,
+      totalPages: 0,
       showing: range.showing,
     };
     console.log(formatter.formatList(emails, meta, options));
-
-    // Store for potential re-saving
-    global.lastSearchQuery = query;
-  } catch (error) {
-    console.error(chalk.red('Error:'), error.message);
-    process.exit(1);
+    return;
   }
+
+  const format = options.idsOnly ? 'ids-only' : options.format || 'markdown';
+
+  const range = calculateRange(offset, limit, emails.length);
+  const formatter = getFormatter(format);
+  const meta = {
+    total: emails.length,
+    unread: emails.filter((e) => !e.isRead).length,
+    page,
+    limit,
+    offset,
+    totalPages: page,
+    showing: range.showing,
+  };
+  console.log(formatter.formatList(emails, meta, options));
+
+  // Store for potential re-saving
+  global.lastSearchQuery = query;
 }
 
 /**
  * List saved searches
  */
 function listSavedSearches() {
-  try {
-    const searches = savedSearchModel.findAll();
+  const searches = savedSearchModel.findAll();
 
-    if (searches.length === 0) {
-      console.log(chalk.yellow('No saved searches found.'));
-      return;
-    }
-
-    console.log(chalk.bold.cyan('Saved Searches:'));
-    console.log();
-
-    searches.forEach((search) => {
-      console.log(chalk.bold(search.name));
-      console.log(chalk.gray(`  ID: ${search.id}`));
-      if (search.description) {
-        console.log(chalk.gray(`  ${search.description}`));
-      }
-      const query = JSON.parse(search.query);
-      const criteriaCount = Object.keys(query).length;
-      console.log(chalk.gray(`  Criteria: ${criteriaCount} condition(s)`));
-      console.log(
-        chalk.gray(`  Created: ${new Date(search.created_at).toLocaleString()}`)
-      );
-      console.log();
-    });
-
-    console.log(chalk.gray(`Total: ${searches.length} saved search(es)`));
-  } catch (error) {
-    console.error(chalk.red('Error:'), error.message);
-    process.exit(1);
+  if (searches.length === 0) {
+    console.log(chalk.yellow('No saved searches found.'));
+    return;
   }
+
+  console.log(chalk.bold.cyan('Saved Searches:'));
+  console.log();
+
+  searches.forEach((search) => {
+    console.log(chalk.bold(search.name));
+    console.log(chalk.gray(`  ID: ${search.id}`));
+    if (search.description) {
+      console.log(chalk.gray(`  ${search.description}`));
+    }
+    const query = JSON.parse(search.query);
+    const criteriaCount = Object.keys(query).length;
+    console.log(chalk.gray(`  Criteria: ${criteriaCount} condition(s)`));
+    console.log(
+      chalk.gray(`  Created: ${new Date(search.created_at).toLocaleString()}`)
+    );
+    console.log();
+  });
+
+  console.log(chalk.gray(`Total: ${searches.length} saved search(es)`));
 }
 
 /**
@@ -346,31 +317,20 @@ function listSavedSearches() {
  */
 function deleteSavedSearch(options) {
   if (!options.name) {
-    console.error(chalk.red('Error: Search name is required'));
-    console.log('Usage: search delete-saved --name <name>');
-    process.exit(1);
+    throw new ValidationError('Search name is required');
   }
 
-  try {
-    const savedSearch = savedSearchModel.findByName(options.name);
+  const savedSearch = savedSearchModel.findByName(options.name);
 
-    if (!savedSearch) {
-      console.error(
-        chalk.red('Error:'),
-        `Saved search "${options.name}" not found`
-      );
-      process.exit(1);
-    }
-
-    savedSearchModel.delete(savedSearch.id);
-    console.log(
-      chalk.green('✓'),
-      `Saved search "${options.name}" deleted successfully`
-    );
-  } catch (error) {
-    console.error(chalk.red('Error:'), error.message);
-    process.exit(1);
+  if (!savedSearch) {
+    throw new ValidationError(`Saved search "${options.name}" not found`);
   }
+
+  savedSearchModel.delete(savedSearch.id);
+  console.log(
+    chalk.green('✓'),
+    `Saved search "${options.name}" deleted successfully`
+  );
 }
 
 module.exports = searchCommand;

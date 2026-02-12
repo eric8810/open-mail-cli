@@ -5,7 +5,9 @@ import config from '../../config';
 import IMAPClient from '../../imap/client';
 import attachmentModel from '../../storage/models/attachment';
 import emailModel from '../../storage/models/email';
+import { ValidationError } from '../../utils/errors';
 import logger from '../../utils/logger';
+import { handleCommandError } from '../utils/error-handler';
 import { formatEmailDetails } from '../utils/formatter';
 import { getFormatter, type FormatOptions } from '../formatters';
 
@@ -15,16 +17,13 @@ import { getFormatter, type FormatOptions } from '../formatters';
 async function readCommand(emailId, options) {
   try {
     if (!emailId) {
-      console.error(chalk.red('Error: Email ID is required'));
-      console.log('Usage: mail-cli read <id>');
-      process.exit(1);
+      throw new ValidationError('Email ID is required');
     }
 
     const email = emailModel.findById(emailId);
 
     if (!email) {
-      console.error(chalk.red(`Email with ID ${emailId} not found`));
-      process.exit(1);
+      throw new ValidationError(`Email with ID ${emailId} not found`);
     }
 
     // Check if body needs to be fetched from server
@@ -96,9 +95,7 @@ async function readCommand(emailId, options) {
       }
     }
   } catch (error) {
-    console.error(chalk.red('Error:'), error.message);
-    logger.error('Read command failed', { emailId, error: error.message });
-    process.exit(1);
+    handleCommandError(error, options.format);
   }
 }
 

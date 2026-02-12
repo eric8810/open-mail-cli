@@ -4,6 +4,7 @@ import ora from 'ora';
 import database from '../../storage/database';
 import { startServer } from '../../api/server';
 import logger from '../../utils/logger';
+import { handleCommandError } from '../utils/error-handler';
 
 const DEFAULT_PORT = 3000;
 const DEFAULT_HOSTNAME = '127.0.0.1';
@@ -64,9 +65,7 @@ export async function serveCommand(options: {
     logger.info('API Server started', { port, hostname });
   } catch (error) {
     spinner.fail(chalk.red('Failed to start API server'));
-    logger.error('Serve command failed', { error: (error as Error).message });
-    console.error(chalk.red('Error:'), (error as Error).message);
-    process.exit(1);
+    handleCommandError(error);
   }
 }
 

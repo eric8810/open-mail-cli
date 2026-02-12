@@ -2,7 +2,9 @@ import chalk from 'chalk';
 import prompts from 'prompts';
 
 import accountManager from '../../accounts/manager';
+import { ValidationError } from '../../utils/errors';
 import logger from '../../utils/logger';
+import { handleCommandError } from '../utils/error-handler';
 
 /**
  * Account command handler
@@ -49,9 +51,7 @@ async function accountCommand(action, options) {
         );
     }
   } catch (error) {
-    console.error(chalk.red('Error:'), error.message);
-    logger.error('Account command failed', { action, error: error.message });
-    process.exit(1);
+    handleCommandError(error);
   }
 }
 
@@ -218,15 +218,12 @@ async function listAccounts(options) {
  */
 async function showAccount(options) {
   if (!options.id) {
-    console.error(chalk.red('Error: Account ID is required'));
-    console.log(chalk.gray('Usage: account show --id <id>'));
-    process.exit(1);
+    throw new ValidationError('Account ID is required');
   }
 
   const account = accountManager.getAccount(options.id);
   if (!account) {
-    console.error(chalk.red(`Account with ID ${options.id} not found`));
-    process.exit(1);
+    throw new ValidationError(`Account with ID ${options.id} not found`);
   }
 
   console.log(chalk.blue.bold('\nAccount Details\n'));
@@ -268,15 +265,12 @@ async function showAccount(options) {
  */
 async function editAccount(options) {
   if (!options.id) {
-    console.error(chalk.red('Error: Account ID is required'));
-    console.log(chalk.gray('Usage: account edit --id <id>'));
-    process.exit(1);
+    throw new ValidationError('Account ID is required');
   }
 
   const account = accountManager.getAccount(options.id);
   if (!account) {
-    console.error(chalk.red(`Account with ID ${options.id} not found`));
-    process.exit(1);
+    throw new ValidationError(`Account with ID ${options.id} not found`);
   }
 
   console.log(chalk.blue.bold('\nEdit Account\n'));
@@ -376,15 +370,12 @@ async function editAccount(options) {
  */
 async function deleteAccount(options) {
   if (!options.id) {
-    console.error(chalk.red('Error: Account ID is required'));
-    console.log(chalk.gray('Usage: account delete --id <id>'));
-    process.exit(1);
+    throw new ValidationError('Account ID is required');
   }
 
   const account = accountManager.getAccount(options.id);
   if (!account) {
-    console.error(chalk.red(`Account with ID ${options.id} not found`));
-    process.exit(1);
+    throw new ValidationError(`Account with ID ${options.id} not found`);
   }
 
   if (!options.yes) {
@@ -410,9 +401,7 @@ async function deleteAccount(options) {
  */
 async function setDefaultAccount(options) {
   if (!options.id) {
-    console.error(chalk.red('Error: Account ID is required'));
-    console.log(chalk.gray('Usage: account default --id <id>'));
-    process.exit(1);
+    throw new ValidationError('Account ID is required');
   }
 
   accountManager.setDefaultAccount(options.id);
@@ -425,9 +414,7 @@ async function setDefaultAccount(options) {
  */
 async function enableAccount(options) {
   if (!options.id) {
-    console.error(chalk.red('Error: Account ID is required'));
-    console.log(chalk.gray('Usage: account enable --id <id>'));
-    process.exit(1);
+    throw new ValidationError('Account ID is required');
   }
 
   accountManager.enableAccount(options.id);
@@ -439,9 +426,7 @@ async function enableAccount(options) {
  */
 async function disableAccount(options) {
   if (!options.id) {
-    console.error(chalk.red('Error: Account ID is required'));
-    console.log(chalk.gray('Usage: account disable --id <id>'));
-    process.exit(1);
+    throw new ValidationError('Account ID is required');
   }
 
   accountManager.disableAccount(options.id);
@@ -453,15 +438,12 @@ async function disableAccount(options) {
  */
 async function testAccount(options) {
   if (!options.id) {
-    console.error(chalk.red('Error: Account ID is required'));
-    console.log(chalk.gray('Usage: account test --id <id>'));
-    process.exit(1);
+    throw new ValidationError('Account ID is required');
   }
 
   const account = accountManager.getAccount(options.id);
   if (!account) {
-    console.error(chalk.red(`Account with ID ${options.id} not found`));
-    process.exit(1);
+    throw new ValidationError(`Account with ID ${options.id} not found`);
   }
 
   console.log(chalk.blue.bold('\nTesting Account Connection\n'));

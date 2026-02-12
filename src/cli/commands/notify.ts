@@ -3,6 +3,7 @@ import inquirer from 'inquirer';
 
 import notificationManager from '../../notifications/manager';
 import logger from '../../utils/logger';
+import { handleCommandError } from '../utils/error-handler';
 
 /**
  * Notify command - Manage email notifications
@@ -33,9 +34,7 @@ async function notifyCommand(action, options = {}) {
         process.exit(1);
     }
   } catch (error) {
-    console.error(chalk.red('Error:'), error.message);
-    logger.error('Notify command failed', { action, error: error.message });
-    process.exit(1);
+    handleCommandError(error);
   }
 }
 

@@ -9,6 +9,7 @@ import SMTPClient from '../../smtp/client';
 import EmailComposer from '../../smtp/composer';
 import emailModel from '../../storage/models/email';
 import logger from '../../utils/logger';
+import { handleCommandError } from '../utils/error-handler';
 
 /**
  * Draft command - Manage email drafts
@@ -42,9 +43,7 @@ async function draftCommand(action, options) {
         process.exit(1);
     }
   } catch (error) {
-    console.error(chalk.red('Error:'), error.message);
-    logger.error('Draft command failed', { action, error: error.message });
-    process.exit(1);
+    handleCommandError(error);
   }
 }
 

@@ -2,6 +2,7 @@ import filterEngine from '../../filters/engine';
 import emailModel from '../../storage/models/email';
 import filterModel from '../../storage/models/filter';
 import logger from '../../utils/logger';
+import { handleCommandError } from '../utils/error-handler';
 import { formatTable } from '../utils/formatter';
 
 /**
@@ -606,8 +607,7 @@ async function filterCommand(action, ...args) {
         console.log('  mail-cli filter stats');
     }
   } catch (error) {
-    console.error('Filter command failed:', error.message);
-    logger.error('Filter command failed', { action, error: error.message });
+    handleCommandError(error);
   }
 }
 

@@ -2,6 +2,7 @@ import chalk from 'chalk';
 
 import signatureManager from '../../signatures/manager';
 import logger from '../../utils/logger';
+import { handleCommandError } from '../utils/error-handler';
 
 /**
  * Signature command handler
@@ -32,9 +33,7 @@ async function signatureCommand(action, options = {}) {
         process.exit(1);
     }
   } catch (error) {
-    logger.error('Signature command failed', { action, error: error.message });
-    console.error(chalk.red(`Error: ${error.message}`));
-    process.exit(1);
+    handleCommandError(error);
   }
 }
 

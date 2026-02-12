@@ -5,7 +5,8 @@ import chalk from 'chalk';
 
 import contactManager from '../../contacts/manager';
 import contactGroupModel from '../../storage/models/contact_group';
-import logger from '../../utils/logger';
+import { ValidationError } from '../../utils/errors';
+import { handleCommandError } from '../utils/error-handler';
 
 /**
  * Contact command - Manage contacts
@@ -32,18 +33,12 @@ function contactCommand(action, args, options) {
       case 'export':
         return exportContacts(args, options);
       default:
-        console.error(chalk.red('Error:'), `Unknown action: ${action}`);
-        console.log(
-          chalk.gray(
-            'Available actions: add, list, show, edit, delete, search, group, import, export'
-          )
+        throw new ValidationError(
+          `Unknown action: ${action}. Available actions: add, list, show, edit, delete, search, group, import, export`
         );
-        process.exit(1);
     }
   } catch (error) {
-    console.error(chalk.red('Error:'), error.message);
-    logger.error('Contact command failed', { action, error: error.message });
-    process.exit(1);
+    handleCommandError(error);
   }
 }
 
@@ -52,13 +47,9 @@ function contactCommand(action, args, options) {
  */
 async function addContact(args, options) {
   if (!options.email) {
-    console.error(chalk.red('Error:'), 'Email address is required');
-    console.log(
-      chalk.gray(
-        'Usage: contact add --email <email> [--name <name>] [--phone <phone>] [--company <company>]'
-      )
+    throw new ValidationError(
+      'Email address is required. Usage: contact add --email <email> [--name <name>] [--phone <phone>] [--company <company>]'
     );
-    process.exit(1);
   }
 
   const contactData = {
@@ -96,8 +87,7 @@ async function listContacts(args, options) {
   if (groupName) {
     const group = contactGroupModel.findByName(groupName);
     if (!group) {
-      console.error(chalk.red('Error:'), `Group "${groupName}" not found`);
-      process.exit(1);
+      throw new ValidationError(`Group "${groupName}" not found`);
     }
     contacts = contactGroupModel.getContacts(group.id);
     console.log(chalk.bold.cyan(`Contacts in group "${group.name}":`));
@@ -138,9 +128,9 @@ async function listContacts(args, options) {
  */
 async function showContact(args, options) {
   if (!args || args.length === 0) {
-    console.error(chalk.red('Error:'), 'Contact ID is required');
-    console.log(chalk.gray('Usage: contact show <id>'));
-    process.exit(1);
+    throw new ValidationError(
+      'Contact ID is required. Usage: contact show <id>'
+    );
   }
 
   const contactId = parseInt(args[0]);
@@ -190,13 +180,9 @@ async function showContact(args, options) {
  */
 async function editContact(args, options) {
   if (!args || args.length === 0) {
-    console.error(chalk.red('Error:'), 'Contact ID is required');
-    console.log(
-      chalk.gray(
-        'Usage: contact edit <id> [--name <name>] [--email <email>] [--phone <phone>] [--company <company>]'
-      )
+    throw new ValidationError(
+      'Contact ID is required. Usage: contact edit <id> [--name <name>] [--email <email>] [--phone <phone>] [--company <company>]'
     );
-    process.exit(1);
   }
 
   const contactId = parseInt(args[0]);
@@ -212,13 +198,9 @@ async function editContact(args, options) {
     updateData.isFavorite = options.favorite === 'true';
 
   if (Object.keys(updateData).length === 0) {
-    console.error(chalk.red('Error:'), 'No fields to update');
-    console.log(
-      chalk.gray(
-        'Usage: contact edit <id> [--name <name>] [--email <email>] [--phone <phone>] [--company <company>]'
-      )
+    throw new ValidationError(
+      'No fields to update. Usage: contact edit <id> [--name <name>] [--email <email>] [--phone <phone>] [--company <company>]'
     );
-    process.exit(1);
   }
 
   const contact = await contactManager.updateContact(contactId, updateData);
@@ -236,9 +218,9 @@ async function editContact(args, options) {
  */
 async function deleteContact(args, options) {
   if (!args || args.length === 0) {
-    console.error(chalk.red('Error:'), 'Contact ID is required');
-    console.log(chalk.gray('Usage: contact delete <id> [--yes]'));
-    process.exit(1);
+    throw new ValidationError(
+      'Contact ID is required. Usage: contact delete <id> [--yes]'
+    );
   }
 
   const contactId = parseInt(args[0]);
@@ -262,9 +244,9 @@ async function deleteContact(args, options) {
  */
 async function searchContacts(args, options) {
   if (!args || args.length === 0) {
-    console.error(chalk.red('Error:'), 'Search keyword is required');
-    console.log(chalk.gray('Usage: contact search <keyword>'));
-    process.exit(1);
+    throw new ValidationError(
+      'Search keyword is required. Usage: contact search <keyword>'
+    );
   }
 
   const keyword = args.join(' ');

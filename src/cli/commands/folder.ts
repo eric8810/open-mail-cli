@@ -5,6 +5,7 @@ import IMAPClient from '../../imap/client';
 import emailModel from '../../storage/models/email';
 import folderModel from '../../storage/models/folder';
 import logger from '../../utils/logger';
+import { handleCommandError } from '../utils/error-handler';
 import { formatTable } from '../utils/formatter';
 
 /**
@@ -51,9 +52,7 @@ folderCommand
 
       console.log(`Folder "${name}" created successfully`);
     } catch (error) {
-      logger.error('Failed to create folder', { error: error.message });
-      console.error(`Error: ${error.message}`);
-      process.exit(1);
+      handleCommandError(error);
     }
   });
 
@@ -91,9 +90,7 @@ folderCommand
         console.log(formatTable(tableData));
       }
     } catch (error) {
-      logger.error('Failed to list folders', { error: error.message });
-      console.error(`Error: ${error.message}`);
-      process.exit(1);
+      handleCommandError(error);
     }
   });
 
@@ -160,9 +157,7 @@ folderCommand
 
       console.log(`Folder "${oldName}" renamed to "${newName}" successfully`);
     } catch (error) {
-      logger.error('Failed to rename folder', { error: error.message });
-      console.error(`Error: ${error.message}`);
-      process.exit(1);
+      handleCommandError(error);
     }
   });
 
@@ -188,9 +183,7 @@ folderCommand
 
       console.log(`Folder "${name}" deleted successfully`);
     } catch (error) {
-      logger.error('Failed to delete folder', { error: error.message });
-      console.error(`Error: ${error.message}`);
-      process.exit(1);
+      handleCommandError(error);
     }
   });
 
@@ -242,9 +235,7 @@ folderCommand
 
       client.disconnect();
     } catch (error) {
-      logger.error('Failed to move emails', { error: error.message });
-      console.error(`Error: ${error.message}`);
-      process.exit(1);
+      handleCommandError(error);
     }
   });
 
@@ -292,9 +283,7 @@ folderCommand
 
       client.disconnect();
     } catch (error) {
-      logger.error('Failed to copy emails', { error: error.message });
-      console.error(`Error: ${error.message}`);
-      process.exit(1);
+      handleCommandError(error);
     }
   });
 

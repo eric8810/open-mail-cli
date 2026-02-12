@@ -3,6 +3,7 @@ import Table from 'cli-table3';
 
 import emailModel from '../../storage/models/email';
 import logger from '../../utils/logger';
+import { handleCommandError } from '../utils/error-handler';
 
 /**
  * List trash command
@@ -59,9 +60,7 @@ function listTrashCommand(options) {
       total: totalCount,
     });
   } catch (error) {
-    console.error(chalk.red(`Error listing trash: ${error.message}`));
-    logger.error('List trash command failed', { error: error.message });
-    process.exit(1);
+    handleCommandError(error);
   }
 }
 
@@ -95,9 +94,7 @@ async function emptyTrashCommand(options) {
     );
     logger.info('Trash emptied', { deletedCount });
   } catch (error) {
-    console.error(chalk.red(`Error emptying trash: ${error.message}`));
-    logger.error('Empty trash command failed', { error: error.message });
-    process.exit(1);
+    handleCommandError(error);
   }
 }
 
@@ -122,9 +119,7 @@ function restoreCommand(emailId, options) {
     console.log(chalk.green(`Email ${emailId} restored from trash`));
     logger.info('Email restored', { emailId });
   } catch (error) {
-    console.error(chalk.red(`Error restoring email: ${error.message}`));
-    logger.error('Restore command failed', { error: error.message });
-    process.exit(1);
+    handleCommandError(error);
   }
 }
 
@@ -179,9 +174,7 @@ function batchRestoreCommand(emailIds, options) {
 
     logger.info('Batch restore completed', { successCount, failCount });
   } catch (error) {
-    console.error(chalk.red(`Error in batch restore: ${error.message}`));
-    logger.error('Batch restore command failed', { error: error.message });
-    process.exit(1);
+    handleCommandError(error);
   }
 }
 

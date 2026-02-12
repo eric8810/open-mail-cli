@@ -2,7 +2,9 @@ import chalk from 'chalk';
 import inquirer from 'inquirer';
 
 import config from '../../config';
+import { ValidationError } from '../../utils/errors';
 import logger from '../../utils/logger';
+import { handleCommandError } from '../utils/error-handler';
 
 /**
  * Config command - Interactive configuration wizard
@@ -22,9 +24,7 @@ async function configCommand(options) {
     // Interactive configuration wizard
     await configWizard();
   } catch (error) {
-    console.error(chalk.red('Configuration error:'), error.message);
-    logger.error('Config command failed', { error: error.message });
-    process.exit(1);
+    handleCommandError(error);
   }
 }
 
@@ -60,8 +60,7 @@ function showConfig() {
 function setConfigValue(keyValue) {
   const [key, value] = keyValue.split('=');
   if (!key || value === undefined) {
-    console.error(chalk.red('Invalid format. Use: --set key=value'));
-    process.exit(1);
+    throw new ValidationError('Invalid format. Use: --set key=value');
   }
 
   config.load();
